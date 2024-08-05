@@ -1,0 +1,20 @@
+#!/bin/bash
+
+OS=$1
+GAME=$2
+STATE=$3
+
+if [[ "$STATE" != "" ]];then
+
+	if [ ! -f /dosbox/states/disks/state-$GAME-$OS.vhd];then
+		cd /dosbox/states/disks/
+		/opt/dosbox-x/dosbox-x -conf /dosbox/utils/confs/command.conf -c "vhdmake -l ../../games/$GAME-$OS.vhd state-$GAME-$OS.vhd" -noconsole -exit
+		if [[ "$?" != 0  ]];then
+			echo "Failed to create linked disk"
+			exit 1 
+		fi
+	fi
+
+/opt/dosbox-x/dosbox-x -conf /opt/dosbox/games/confs/$GAME-$OS.conf
+
+if
