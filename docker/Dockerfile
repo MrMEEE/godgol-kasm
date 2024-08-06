@@ -10,13 +10,8 @@ WORKDIR $HOME
 
 COPY dosbox-x/ /opt/dosbox-x
 
-RUN ls -la /opt/dosbox-x
-
-#RUN echo "/usr/bin/desktop_ready && /opt/dosbox-x/dosbox-x &" > $STARTUPDIR/custom_startup.sh \
-#&& chmod +x $STARTUPDIR/custom_startup.sh
-
 RUN apt update \
-    && apt -y install libsdl-net1.2 libsdl2-net-2.0-0 libslirp0 libfluidsynth2 libavcodec-extra libavcodec-extra58 libxkbfile1  \
+    && apt -y install libsdl-net1.2 libsdl2-net-2.0-0 libslirp0 libfluidsynth2 libavcodec-extra libavcodec-extra58 libxkbfile1 jq yad \
     && apt clean
 
 # Update the desktop environment to be optimized for a single application
@@ -24,7 +19,7 @@ RUN cp $HOME/.config/xfce4/xfconf/single-application-xfce-perchannel-xml/* $HOME
 RUN cp /usr/share/backgrounds/bg_kasm.png /usr/share/backgrounds/bg_default.png
 RUN apt-get remove -y xfce4-panel
 
-RUN echo "/usr/bin/desktop_ready && /dosbox/utils/bin/godgol-launch &" > $STARTUPDIR/custom_startup.sh \
+RUN echo "/usr/bin/desktop_ready && /dosbox/utils/bin/godgol-launch \$DOSBOXOS \$DOSBOXGAME&" > $STARTUPDIR/custom_startup.sh \
 && chmod +x $STARTUPDIR/custom_startup.sh
 
 ######### End Customizations ###########

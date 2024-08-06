@@ -2,19 +2,59 @@
 
 OS=$1
 GAME=$2
-STATE=$3
+GAMETITLE=$(cat /dosbox/launch_selections.json |jq -r '.gamename')
+GAMEMEDIA=$(cat /dosbox/launch_selections.json |jq -r '.gamemedia')
 
-if [[ "$STATE" != "" ]];then
+if [ ! -f /dosbox/os/disks/$OS.vhd ];then
+	yad --title="Operating system disk doesn't exist"
+	exit 2
+fi
 
-	if [ ! -f /dosbox/states/disks/state-$GAME-$OS.vhd];then
-		cd /dosbox/states/disks/
-		/opt/dosbox-x/dosbox-x -conf /dosbox/utils/confs/command.conf -c "vhdmake -l ../../games/$GAME-$OS.vhd state-$GAME-$OS.vhd" -noconsole -exit
-		if [[ "$?" != 0  ]];then
-			echo "Failed to create linked disk"
-			exit 1 
-		fi
+if [[ "$GAME" == "install" ]];then
+	if [ ! -f /dosbox/games/isos/$GAMEMEDIA ];then
+		yad --title="Game media '$GAMEMEDIA' doesn't exist"
+		exit 7
 	fi
+	if [ ! -f /dosbox/games/disks/$GAMETITLE-$OS.vhd ];then
+                cd /dosbox/games/disks/
+                /opt/dosbox-x/dosbox-x -conf /dosbox/utils/confs/command.conf -c "vhdmake -l ../../os/$OS.vhd $GAMETITLE-$OS.vhd" -noconsole -exit
+                if [[ ! -f /dosbox/games/disks/$GAMETITLE-$OS.vhd ]];then
+                        yad --title="Failed to create linked game disk"
+                        exit 5
+                fi
+        fi
 
-/opt/dosbox-x/dosbox-x -conf /opt/dosbox/games/confs/$GAME-$OS.conf
+cp /opt/dosbox/os/confs/$OS.conf /opt/dosbox/games/confs/$GAMETITLE-$OS.conf
+sed -i "s|imgmount C=.*|imgmount C /dosbox/games/disks/$GAMETITLE-$OS.vhd|g"
+sed -i "s|imgmount D=.*|imgmount D /dosbox/games/isos/$GAMEMEDIA|g"
+yad --title="Installing Game: $GAMETITLE, from media: $GAMEMEDIA"
+/opt/dosbox-x/dosbox-x -conf /opt/dosbox/games/confs/$GAMETITLE-$OS.conf &
 
-if
+exit 0
+
+fi
+
+if [ ! -f /dosbox/games/disks/$GAME-$OS.vhd ];then
+        yad --title="Game disk doesn't exist"
+        exit 3
+fi
+
+if [ ! -f /dosbox/states/disks/state-$GAME-$OS.vhd];then
+	cd /dosbox/states/disks/
+	/opt/dosbox-x/dosbox-x -conf /dosbox/utils/confs/command.conf -c "vhdmake -l ../../games/$GAME-$OS.vhd state-$GAME-$OS.vhd" -noconsole -exit
+	if [[ "$?" != 0  ]];then
+		yad --title="Failed to create linked state disk"
+		exit 1 
+	fi
+	cp /opt/dosbox/games/confs/$GAME-$OS.conf /opt/dosbox/states/confs/$GAME-$OS.conf
+	sed -i "s|imgmount C=.*|imgmount C /dosbox/games/disks/state-$GAMETITLE-$OS.vhd|g"
+fi
+	
+if [ ! -f /opt/dosbox/states/confs/$GAME-$OS.conf ];then
+        yad --title="Game configuration doesn't exist"
+        exit 4
+fi
+
+/opt/dosbox-x/dosbox-x -conf /opt/dosbox/states/confs/$GAME-$OS.conf
+
+
